@@ -54,7 +54,7 @@ level_config = {
         "boid_count": 20,             
         "meteor_count": 8            
     },
-    "LEVEL_2": {
+    "LEVEL_1_5": {
         "kill_target": 20,           
         "darkness_alpha": 245,       
         "headlight_radius": 120,     
@@ -117,12 +117,12 @@ while running:
             running = False
         
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if game_state in ["LEVEL_1", "LEVEL_2"] and player.alive():
+            if game_state in ["LEVEL_1", "LEVEL_1_5"] and player.alive():
                 player.shoot(all_sprites, lasers_group)
                 if sfx_laser: sfx_laser.play()
 
     # --- B. UNIFIED PLAY STATE ---
-    if game_state in ["LEVEL_1", "LEVEL_2"]:
+    if game_state in ["LEVEL_1", "LEVEL_1_5"]:
         config = level_config[game_state]
 
         # 1. TRANSLATION (Scrolling Background)
@@ -221,8 +221,8 @@ while running:
         screen.blit(trans_text, (WIDTH//2 - trans_text.get_width()//2, HEIGHT//2))
         
         if current_time - transition_start_time > 3000: 
-            game_state = "LEVEL_2"
-            spawn_level_entities("LEVEL_2") 
+            game_state = "LEVEL_1_5"
+            spawn_level_entities("LEVEL_1_5") 
             # Give the player 2 seconds of safety when entering Level 2
             invulnerable_timer = pygame.time.get_ticks()
 
