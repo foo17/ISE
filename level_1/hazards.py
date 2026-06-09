@@ -4,7 +4,7 @@ import random
 # 1. THE HAZARD SYSTEM (Meteor)
 class Meteor(pygame.sprite.Sprite):
     """
-    Demonstrates the Object Pooling design pattern and Affine Transformations 
+    Demonstrates the Object Pooling design pattern and Transformations 
     (Translation and Matrix Rotation) applied to environmental hazards.
     """
     def __init__(self):
@@ -13,7 +13,7 @@ class Meteor(pygame.sprite.Sprite):
         # --- ASSET INTEGRATION & IMAGE PROCESSING---
         try:
             # extract image
-            img = pygame.image.load('Assets/PNG/Meteors/meteorBrown_big1.png').convert_alpha()
+            img = pygame.image.load('../Assets/PNG/Meteors/meteorBrown_big1.png').convert_alpha()
             # Randomize the scale slightly for variety of sizes
             size = random.randint(35, 75) 
             self.original_image = pygame.transform.scale(img, (size, size))

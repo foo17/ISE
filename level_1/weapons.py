@@ -11,7 +11,7 @@ class Laser(pygame.sprite.Sprite):
         # ---ASSET INTEGRATION & Image Processing---
         try:
             # extract image
-            img = pygame.image.load('Assets/PNG/Lasers/laserBlue01.png').convert_alpha()
+            img = pygame.image.load('../Assets/PNG/Lasers/laserBlue01.png').convert_alpha()
             # Scale the asset to playable
             self.original_image = pygame.transform.scale(img, (8, 35))
         except FileNotFoundError:

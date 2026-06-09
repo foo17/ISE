@@ -6,9 +6,7 @@ from player import LunarDefender
 from hazards import Meteor, ParticleEmitter
 from boids import AlienDrone
 
-# ============================================================================
-# 1. ENGINE, UI & AUDIO SETUP
-# ============================================================================
+# ---ENGINE, UI & AUDIO SETUP---
 pygame.init()
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -18,8 +16,8 @@ FPS = 60
 
 # --- UI FONT INTEGRATION ---
 try:
-    ui_font = pygame.font.Font('Assets/Bonus/kenvector_future.ttf', 24)
-    title_font = pygame.font.Font('Assets/Bonus/kenvector_future.ttf', 54)
+    ui_font = pygame.font.Font('../Assets/Bonus/kenvector_future.ttf', 24)
+    title_font = pygame.font.Font('../Assets/Bonus/kenvector_future.ttf', 54)
 except FileNotFoundError:
     print("Warning: Custom font not found. Defaulting to system font.")
     ui_font = pygame.font.SysFont(None, 24)
@@ -28,10 +26,10 @@ except FileNotFoundError:
 # --- AUDIO INTEGRATION ---
 pygame.mixer.init()
 try:
-    sfx_laser = pygame.mixer.Sound('Assets/Bonus/sfx_laser1.ogg')
-    sfx_explosion = pygame.mixer.Sound('Assets/Bonus/sfx_zap.ogg')
-    sfx_lose = pygame.mixer.Sound('Assets/Bonus/sfx_lose.ogg') 
-    sfx_damage = pygame.mixer.Sound('Assets/Bonus/sfx_shieldDown.ogg') # New Damage Sound
+    sfx_laser = pygame.mixer.Sound('../Assets/Bonus/sfx_laser1.ogg')
+    sfx_explosion = pygame.mixer.Sound('../Assets/Bonus/sfx_zap.ogg')
+    sfx_lose = pygame.mixer.Sound('../Assets/Bonus/sfx_lose.ogg') 
+    sfx_damage = pygame.mixer.Sound('../Assets/Bonus/sfx_shieldDown.ogg') # New Damage Sound
     
     sfx_explosion.set_volume(0.6) 
     sfx_damage.set_volume(0.8)
@@ -39,39 +37,33 @@ except FileNotFoundError:
     print("Warning: Audio files not found. Check relative paths.")
     sfx_laser = sfx_explosion = sfx_lose = sfx_damage = None
 
-# ============================================================================
-# 2. ASSET LOADING (Background)
-# ============================================================================
+# ---ASSET LOADING (Background)---
 try:
-    bg_raw = pygame.image.load('Assets/Backgrounds/darkPurple.png').convert()
+    bg_raw = pygame.image.load('../Assets/Backgrounds/darkPurple.png').convert()
     bg_image = pygame.transform.scale(bg_raw, (WIDTH, HEIGHT))
 except FileNotFoundError:
     bg_image = pygame.Surface((WIDTH, HEIGHT))
     bg_image.fill((20, 15, 35))
 
-# ============================================================================
-# 3. UNIFIED CONFIGURATION
-# ============================================================================
+# --- UNIFIED CONFIGURATION ---
 level_config = {
     "LEVEL_1": {
-        "kill_target": 1,           
+        "kill_target": 15,           
         "darkness_alpha": 180,       
         "headlight_radius": 250,     
-        "boid_count": 5,             
+        "boid_count": 20,             
         "meteor_count": 8            
     },
     "LEVEL_2": {
-        "kill_target": 3,           
+        "kill_target": 20,           
         "darkness_alpha": 245,       
         "headlight_radius": 120,     
-        "boid_count": 18,            
+        "boid_count": 30,            
         "meteor_count": 15           
     }
 }
 
-# ============================================================================
-# 4. SPRITE GROUPS & INITIALIZATION
-# ============================================================================
+# ---SPRITE GROUPS & INITIALIZATION---
 all_sprites = pygame.sprite.Group()
 lasers_group = pygame.sprite.Group()
 meteors_group = pygame.sprite.Group()
@@ -99,9 +91,7 @@ def spawn_level_entities(level_name):
         all_sprites.add(d)
         drones_group.add(d)
 
-# ============================================================================
-# 5. GAME STATE & PLAYER VARIABLES
-# ============================================================================
+# ---GAME STATE & PLAYER VARIABLES---
 bg_y = 0
 scroll_speed = 4 
 game_state = "LEVEL_1" 
@@ -116,9 +106,7 @@ invulnerable_timer = pygame.time.get_ticks()
 
 spawn_level_entities("LEVEL_1")
 
-# ============================================================================
-# 6. MAIN GAME LOOP
-# ============================================================================
+# ---MAIN GAME LOOP---
 running = True
 while running:
     current_time = pygame.time.get_ticks()
@@ -153,7 +141,6 @@ while running:
         for hit in meteor_hits:
             emitter.trigger_explosion(hit.rect.centerx, hit.rect.centery, color=(255, 150, 0))
             if sfx_explosion: sfx_explosion.play()
-            if game_state == "LEVEL_1": current_kills += 1
             new_m = Meteor()
             all_sprites.add(new_m)
             meteors_group.add(new_m)
@@ -162,7 +149,7 @@ while running:
         for hit in drone_hits:
             emitter.trigger_explosion(hit.rect.centerx, hit.rect.centery, color=(0, 255, 255))
             if sfx_explosion: sfx_explosion.play()
-            if game_state == "LEVEL_2": current_kills += 1
+            current_kills += 1
 
         # 4. PLAYER HEALTH & INVULNERABILITY LOGIC
         if player.alive():
@@ -227,7 +214,7 @@ while running:
             else:
                 game_state = "VICTORY"
 
-    # --- C. TRANSITION STATE ---
+    # --- TRANSITION STATE ---
     elif game_state == "TRANSITION":
         screen.fill((0, 0, 0)) 
         trans_text = title_font.render("ENTERING DARK SIDE", True, (255, 50, 50))
@@ -239,7 +226,7 @@ while running:
             # Give the player 2 seconds of safety when entering Level 2
             invulnerable_timer = pygame.time.get_ticks()
 
-    # --- D. VICTORY STATE ---
+    # --- VICTORY STATE ---
     elif game_state == "VICTORY":
         screen.fill((20, 20, 50))
         emitter.trigger_explosion(WIDTH // 2, HEIGHT // 2, color=(50, 255, 50))
@@ -247,7 +234,7 @@ while running:
         win_text = title_font.render("MISSION ACCOMPLISHED", True, (50, 255, 50))
         screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
 
-    # --- E. GAME OVER STATE ---
+    # --- GAME OVER STATE ---
     elif game_state == "GAME_OVER":
         screen.blit(bg_image, (0, bg_y))
         all_sprites.draw(screen)

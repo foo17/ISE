@@ -4,7 +4,7 @@ import math
 class LunarDefender(pygame.sprite.Sprite):
     """
     The main player entity. 
-    Demonstrates Affine Transformations (such as Translation & Rotation) and 
+    Demonstrates Transformations (such as Translation & Rotation) and 
     Event-Driven state management (such as cooldowns).
     """
     def __init__(self, x, y):
@@ -13,7 +13,7 @@ class LunarDefender(pygame.sprite.Sprite):
         # --- ASSET INTEGRATION & IMAGE PROCESSING ---
         try:
             # extract the images
-            img = pygame.image.load('Assets/PNG/playerShip1_blue.png').convert_alpha()
+            img = pygame.image.load('../Assets/PNG/playerShip1_blue.png').convert_alpha()
             # Scaling the resolution to a playable dimension
             self.original_image = pygame.transform.scale(img, (60, 60))
         except FileNotFoundError:
@@ -76,9 +76,9 @@ class LunarDefender(pygame.sprite.Sprite):
         dy = mouse_y - self.rect.centery
         
         # MATH APPLICATION: Inverse Tangent (atan2)
-        # We use math.atan2(-dy, dx) to find the angle in radians.
+        # math.atan2(-dy, dx) to find the angle in radians.
         # NOTE: -dy is used because Pygame's Y-axis is inverted (0 is at the top).
-        # We subtract 90 degrees because 0 degrees in Pygame points RIGHT (East),
+        # Subtract 90 degrees because 0 degrees in Pygame points RIGHT (East),
         # but top-down spaceships are drawn pointing UP (North).
         self.current_angle = math.degrees(math.atan2(-dy, dx)) - 90 
         

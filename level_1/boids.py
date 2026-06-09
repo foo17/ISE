@@ -8,7 +8,7 @@ class AlienDrone(pygame.sprite.Sprite):
         # --- ASSET INTEGRATION ---
         try:
             # extract image
-            img = pygame.image.load('Assets/PNG/Enemies/enemyBlack1.png').convert_alpha()
+            img = pygame.image.load('../Assets/PNG/Enemies/enemyBlack1.png').convert_alpha()
             self.original_image = pygame.transform.scale(img, (35, 35))
         except FileNotFoundError:
             # A fallback
