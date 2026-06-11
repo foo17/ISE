@@ -82,7 +82,7 @@ drones_group = pygame.sprite.Group()
 emitter = ParticleEmitter()
 player = LunarDefender(WIDTH // 2, HEIGHT - 100)
 all_sprites.add(player)
-level2_manager = None  # Level 2 မန်နေဂျာ ကနဦး Pointer
+level2_manager = None 
 
 def draw_headlight_mask(surface, player_x, player_y, radius, darkness_level):
     mask = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
