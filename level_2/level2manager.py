@@ -190,7 +190,7 @@ class Level2Manager:
 
         # player beam cooldown HUD bar
         cooldown_text = font.render("HYPER BEAM:", True, (0, 230, 255))
-        surface.blit(cooldown_text, (430, 550))
+        surface.blit(cooldown_text, (390, 550))
         
         pygame.draw.rect(surface, (80, 80, 80), [600, 555, 180, 15])
         

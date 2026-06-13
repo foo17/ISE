@@ -8,6 +8,7 @@ from player import LunarDefender
 from hazards import Meteor, ParticleEmitter
 from boids import AlienDrone
 from level_2.level2manager import Level2Manager
+from UI.ui_manager import UIManager
 
 # ---ENGINE, UI & AUDIO SETUP---
 pygame.init()
@@ -21,10 +22,14 @@ FPS = 60
 try:
     ui_font = pygame.font.Font('../Assets/Bonus/kenvector_future.ttf', 24)
     title_font = pygame.font.Font('../Assets/Bonus/kenvector_future.ttf', 54)
+    credits_font = pygame.font.Font('../Assets/Bonus/kenvector_future.ttf', 16)
 except FileNotFoundError:
     print("Warning: Custom font not found. Defaulting to system font.")
     ui_font = pygame.font.SysFont(None, 24)
     title_font = pygame.font.SysFont(None, 54)
+    credits_font = pygame.font.SysFont(None, 16)
+
+ui_manager = UIManager(screen, title_font, ui_font, WIDTH, HEIGHT, credits_font)
 
 # --- AUDIO INTEGRATION ---
 pygame.mixer.init()
@@ -34,11 +39,25 @@ try:
     sfx_lose = pygame.mixer.Sound('../Assets/Bonus/sfx_lose.ogg') 
     sfx_damage = pygame.mixer.Sound('../Assets/Bonus/sfx_shieldDown.ogg') # New Damage Sound
     
-    sfx_explosion.set_volume(0.6) 
-    sfx_damage.set_volume(0.8)
 except FileNotFoundError:
     print("Warning: Audio files not found. Check relative paths.")
     sfx_laser = sfx_explosion = sfx_lose = sfx_damage = None
+
+# --- SETTINGS: SFX VOLUME CONTROL ---
+sfx_volume = 0.8
+
+def apply_sfx_volume(volume):
+    """Apply the settings-screen volume value to all sound effects."""
+    if sfx_laser:
+        sfx_laser.set_volume(volume)
+    if sfx_explosion:
+        sfx_explosion.set_volume(0.6 * volume)
+    if sfx_damage:
+        sfx_damage.set_volume(0.8 * volume)
+    if sfx_lose:
+        sfx_lose.set_volume(volume)
+
+apply_sfx_volume(sfx_volume)
 
 # ---ASSET LOADING (Background)---
 try:
@@ -73,6 +92,8 @@ level_config = {
     }
 }
 
+PLAYING_STATES = ["LEVEL_1", "LEVEL_1_5", "LEVEL_2"]
+
 # ---SPRITE GROUPS & INITIALIZATION---
 all_sprites = pygame.sprite.Group()
 lasers_group = pygame.sprite.Group()
@@ -102,10 +123,37 @@ def spawn_level_entities(level_name):
         all_sprites.add(d)
         drones_group.add(d)
 
+def reset_game():
+    global all_sprites, lasers_group, meteors_group, drones_group
+    global emitter, player, level2_manager
+    global bg_y, game_state, current_kills, transition_start_time
+    global player_lives, invulnerable_timer
+
+    all_sprites.empty()
+    lasers_group.empty()
+    meteors_group.empty()
+    drones_group.empty()
+
+    emitter = ParticleEmitter()
+    player = LunarDefender(WIDTH // 2, HEIGHT - 100)
+    all_sprites.add(player)
+
+    level2_manager = None
+
+    bg_y = 0
+    current_kills = 0
+    transition_start_time = 0
+    player_lives = 3
+    invulnerable_timer = pygame.time.get_ticks()
+
+    spawn_level_entities("LEVEL_1")
+    return "LEVEL_1"
+
 # ---GAME STATE & PLAYER VARIABLES---
 bg_y = 0
 scroll_speed = 4 
-game_state = "LEVEL_1" 
+game_state = "LEVEL_1"
+game_state = "START_MENU" 
 current_kills = 0 
 transition_start_time = 0
 
@@ -115,7 +163,17 @@ invulnerable_duration = 2000 # 2000 milliseconds = 2 seconds
 # Start the game with 2 seconds of invulnerability
 invulnerable_timer = pygame.time.get_ticks() 
 
-spawn_level_entities("LEVEL_1")
+# --- BUTTON RECT VARIABLES ---
+start_button = None
+instructions_button = None
+settings_button = None
+instructions_start_button = None
+instructions_back_button = None
+settings_back_button = None
+continue_button = None
+restart_button = None
+credits_button = None
+quit_button = None
 
 # ---MAIN GAME LOOP---
 running = True
@@ -127,10 +185,98 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         
+        # Keyboard controls for menu, pause, restart, credits, and quit
+        if event.type == pygame.KEYDOWN:
+            if game_state == "START_MENU":
+                if event.key == pygame.K_RETURN:
+                    game_state = reset_game()
+                elif event.key == pygame.K_i:
+                    game_state = "INSTRUCTIONS"
+                elif event.key == pygame.K_s:
+                    game_state = "SETTINGS"
+            
+            elif game_state == "INSTRUCTIONS":
+                if event.key == pygame.K_RETURN:
+                    game_state = reset_game()
+                elif event.key in (pygame.K_ESCAPE, pygame.K_BACKSPACE):
+                    game_state = "START_MENU"
+
+            elif game_state == "SETTINGS":
+                if event.key in (pygame.K_RETURN, pygame.K_ESCAPE):
+                    game_state = "START_MENU"
+                elif event.key == pygame.K_UP:
+                    sfx_volume = min(1.0, round(sfx_volume + 0.1, 1))
+                    apply_sfx_volume(sfx_volume)
+                elif event.key == pygame.K_DOWN:
+                    sfx_volume = max(0.0, round(sfx_volume - 0.1, 1))
+                    apply_sfx_volume(sfx_volume)
+
+            elif game_state in PLAYING_STATES:
+                if event.key == pygame.K_ESCAPE:
+                    previous_state = game_state
+                    game_state = "PAUSED"
+
+            elif game_state == "PAUSED":
+                if event.key == pygame.K_ESCAPE:
+                    game_state = previous_state
+                elif event.key == pygame.K_r:
+                    game_state = reset_game()
+                elif event.key == pygame.K_q:
+                    running = False
+
+            elif game_state in ["VICTORY", "GAME_OVER"]:
+                if event.key == pygame.K_r:
+                    game_state = reset_game()
+                elif event.key == pygame.K_c:
+                    game_state = "CREDITS"
+                elif event.key == pygame.K_q:
+                    running = False
+
+            elif game_state == "CREDITS":
+                if event.key == pygame.K_RETURN:
+                    game_state = "START_MENU"
+                elif event.key == pygame.K_q:
+                    running = False
+        
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if game_state in ["LEVEL_1", "LEVEL_1_5", "LEVEL_2"] and player.alive():
+            if game_state == "START_MENU":
+                if start_button is not None and start_button.collidepoint(event.pos):
+                    game_state = reset_game()
+                elif instructions_button is not None and instructions_button.collidepoint(event.pos):
+                    game_state = "INSTRUCTIONS"
+                elif settings_button is not None and settings_button.collidepoint(event.pos):
+                    game_state = "SETTINGS"
+
+            elif game_state == "INSTRUCTIONS":
+                if instructions_start_button is not None and instructions_start_button.collidepoint(event.pos):
+                    game_state = reset_game()
+                elif instructions_back_button is not None and instructions_back_button.collidepoint(event.pos):
+                    game_state = "START_MENU"
+            
+            elif game_state == "SETTINGS":
+                if settings_back_button is not None and settings_back_button.collidepoint(event.pos):
+                    game_state = "START_MENU"
+
+            elif game_state == "PAUSED":
+                if continue_button is not None and continue_button.collidepoint(event.pos):
+                    game_state = previous_state
+                elif restart_button is not None and restart_button.collidepoint(event.pos):
+                    game_state = reset_game()
+                elif quit_button is not None and quit_button.collidepoint(event.pos):
+                    running = False
+
+            elif game_state in ["VICTORY", "GAME_OVER"]:
+                if restart_button is not None and restart_button.collidepoint(event.pos):
+                    game_state = reset_game()
+                elif credits_button is not None and credits_button.collidepoint(event.pos):
+                    game_state = "CREDITS"
+                elif quit_button is not None and quit_button.collidepoint(event.pos):
+                    running = False
+
+            elif game_state in PLAYING_STATES and player.alive():
                 player.shoot(all_sprites, lasers_group)
-                if sfx_laser: sfx_laser.play()
+                if sfx_laser:
+                    sfx_laser.play()
 
     #--- REAL-TIME MOUSE HOLD DETECTION FOR LEVEL 2 SUPER HYPER BEAM ---
     if game_state == "LEVEL_2" and level2_manager and player.alive():
@@ -138,8 +284,18 @@ while running:
         if mouse_buttons[2]: # Right mouse button is held down
             level2_manager.trigger_player_beam(current_time)
 
+    # --- START MENU STATE ---
+    if game_state == "START_MENU":
+        start_button, instructions_button, settings_button = ui_manager.start_menu(current_time)
+
+    elif game_state == "INSTRUCTIONS":
+        instructions_start_button, instructions_back_button = ui_manager.instructions_screen()
+
+    elif game_state == "SETTINGS":
+        settings_back_button = ui_manager.settings_screen(sfx_volume)
+
     # --- B. UNIFIED PLAY STATE ---
-    if game_state in ["LEVEL_1", "LEVEL_1_5", "LEVEL_2"]:
+    if game_state in PLAYING_STATES:
         config = level_config[game_state]
 
         # 1. TRANSLATION (Scrolling Background)
@@ -270,6 +426,13 @@ while running:
                 current_kills = 0
                 for sprite in meteors_group: sprite.kill()
                 for sprite in drones_group: sprite.kill()
+    
+    # --- PAUSED STATE ---
+    elif game_state == "PAUSED":
+        screen.blit(bg_image, (0, bg_y))
+        screen.blit(bg_image, (0, bg_y - HEIGHT))
+        all_sprites.draw(screen)
+        continue_button, restart_button, quit_button = ui_manager.pause_menu()
 
     # --- TRANSITION STATE ---
     # Transition 1 : LEVEL 1 -> LEVEL 1_5
@@ -297,30 +460,17 @@ while running:
 
     # --- VICTORY STATE ---
     elif game_state == "VICTORY":
-        screen.fill((20, 20, 50))
-        emitter.trigger_explosion(WIDTH // 2, HEIGHT // 2, color=(50, 255, 50))
+        restart_button, credits_button, quit_button = ui_manager.end_screen("VICTORY")
         emitter.update_and_draw(screen)
-        win_text = title_font.render("MISSION ACCOMPLISHED", True, (50, 255, 50))
-        screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
 
     # --- GAME OVER STATE ---
     elif game_state == "GAME_OVER":
-        screen.blit(bg_image, (0, bg_y))
-        all_sprites.draw(screen)
+        restart_button, credits_button, quit_button = ui_manager.end_screen("GAME_OVER")
         emitter.update_and_draw(screen)
-
-        game_over_lives_text = ui_font.render("LIVES: 0", True, (255, 50, 50))
-        screen.blit(game_over_lives_text, (20, 20))
-        
-        if level2_manager is not None or config["kill_target"] == 0:
-            game_over_tracker_text = ui_font.render("ELIMINATE MOTHERSHIP", True, (255, 255, 255))
-        else:
-            game_over_tracker_text = ui_font.render(f"TARGET DEFEATED: {current_kills} / {config['kill_target']}", True, (255, 255, 255))
-        
-        screen.blit(game_over_tracker_text, (20, 50))
-
-        lose_text = title_font.render("SIGNAL LOST", True, (255, 50, 50))
-        screen.blit(lose_text, (WIDTH//2 - lose_text.get_width()//2, HEIGHT//2))
+    
+    # ---  CREDITS STATE ---
+    elif game_state == "CREDITS":
+        ui_manager.credits_screen()
 
     pygame.display.flip()
     clock.tick(FPS)
